@@ -6,32 +6,39 @@ import requests
 # Create your views here.
 
 def index(request):
-    # return HttpResponse("Hello, world. You're at the home_auth index.")
     return render(request, 'index.html', {})
 
 def login(request):
-    # redirect to login page at home.mephi.ru
-    # validate user
-    # if request.user.is_authenticated:
-    #     return HttpResponse("You are already logged in.")
-    
+    # getting ticket from request
     ticket = request.GET.get('ticket', None)
+    # if ticket is not None, then we have to validate it
     if ticket != None:
+        # creating service url
         params = urllib.parse.urlencode({'service' : request.build_absolute_uri(), 'ticket' : ticket})
         url = f"https://auth.mephi.ru/validate?{params}"
         payload={}
         headers = {}
-
+        # sending request to CAS server
         response = requests.request("GET", url, headers=headers, data=payload)
         if response.status_code != 200:
             return HttpResponse("Error while validating user.")
+        # if response is not empty, then we have to parse it
         resp = response.text.split()
+        # structure of response if auth is ok:
+        # yes
+        # gvrybina
+
+        # structure of response if auth is not ok:
+        # no
+
+        # if auth is ok, then we show login
         if 'yes' in resp:
             user_login = resp[1]
             return HttpResponse(f"User validated, login {user_login}")
-            
+        
+        # if auth is not ok, then we show error
         return HttpResponse("User not validated.")
+        
+    # if ticket is None, then we have to redirect user to CAS server
     params = urllib.parse.urlencode({'service' : request.build_absolute_uri()})
-    # print(curr_url)
-    # return HttpResponse("Hello, world. You're at the home_auth login page. <a href='https://home.mephi.ru/cas/login?service=" + curr_url + "'>Login</a>")
     return redirect(f"https://auth.mephi.ru/login?{params}")
